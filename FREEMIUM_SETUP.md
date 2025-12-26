@@ -38,6 +38,7 @@ Solo pagas por:
 ├─────────────────────────────────────────────────────────────────┤
 │  COSTO POR PROVEEDOR (este mes)                                 │
 │                                                                 │
+│  Midjourney       ████████████████████  $15.20  (760 imgs)     │
 │  OpenAI DALL-E    ████████████████░░░░  $12.40  (156 imgs)     │
 │  Leonardo AI      ████████░░░░░░░░░░░░  $6.20   (413 imgs)     │
 │  Nano Banana      ████░░░░░░░░░░░░░░░░  $3.80   (190 imgs)     │
@@ -46,10 +47,11 @@ Solo pagas por:
 ├─────────────────────────────────────────────────────────────────┤
 │  ÚLTIMAS GENERACIONES                                           │
 │                                                                 │
-│  🖼️  "astronaut riding horse"     DALL-E    $0.08   hace 2min  │
-│  🖼️  "sunset over mountains"      Leonardo  $0.015  hace 5min  │
-│  🖼️  "cyberpunk city night"       FLUX      $0.055  hace 12min │
-│  🖼️  "cute cat in garden"         Nano      $0.02   hace 15min │
+│  🖼️  "fantasy castle artwork"     Midjourney $0.02  hace 1min  │
+│  🖼️  "astronaut riding horse"     DALL-E     $0.08  hace 2min  │
+│  🖼️  "sunset over mountains"      Leonardo   $0.015 hace 5min  │
+│  🖼️  "cyberpunk city night"       FLUX       $0.055 hace 12min │
+│  🖼️  "cute cat in garden"         Nano       $0.02  hace 15min │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │  GRÁFICO DE GASTOS (últimos 30 días)                           │
@@ -79,8 +81,8 @@ CREATE TABLE generations (
   enhanced_prompt TEXT,
 
   -- Provider info
-  provider TEXT NOT NULL,  -- 'openai', 'leonardo', 'google', 'replicate'
-  model TEXT NOT NULL,     -- 'dall-e-3', 'flux-pro', etc.
+  provider TEXT NOT NULL,  -- 'openai', 'midjourney', 'google', 'leonardo', 'replicate'
+  model TEXT NOT NULL,     -- 'dall-e-3', 'midjourney-v6', 'flux-pro', etc.
 
   -- Image info
   image_url TEXT NOT NULL,
@@ -129,6 +131,7 @@ ORDER BY month DESC;
 // src/lib/pricing.ts
 
 export const PROVIDER_COSTS = {
+  // === APIs OFICIALES ===
   openai: {
     'dall-e-3': {
       '1024x1024': 0.04,
@@ -157,6 +160,15 @@ export const PROVIDER_COSTS = {
     'flux-pro': 0.055,
     'flux-dev': 0.030,
     'flux-schnell': 0.003,
+  },
+
+  // === MIDJOURNEY (via terceros) ===
+  // Precio depende del proveedor que uses
+  midjourney: {
+    'useapi': 0.02,        // ~$10/mes, estimando 500 imgs
+    'imagineapi': 0.01,    // $30/mes ilimitado, pero estimamos
+    'apiframe': 0.043,     // $39/900 imgs
+    'default': 0.02,       // Estimación conservadora
   },
 } as const;
 
@@ -231,16 +243,53 @@ vercel login
 
 ### 3. APIs de Imágenes (lo único que pagas)
 
-| API | Cómo obtener key | Costo mínimo |
-|-----|------------------|--------------|
-| **OpenAI** | platform.openai.com | Prepago $5 mínimo |
-| **Google AI** | ai.google.dev | Tier gratis disponible |
-| **Leonardo** | leonardo.ai | Plan desde $9/mes |
-| **Replicate** | replicate.com | Pay-as-you-go, sin mínimo |
+#### Proveedores con API Oficial
 
-**Recomendación para empezar**:
-- Google AI (Nano Banana) tiene tier gratis
-- Replicate es pay-as-you-go sin mínimo
+| API | Cómo obtener key | Costo por imagen | Costo mínimo |
+|-----|------------------|------------------|--------------|
+| **OpenAI (DALL-E 3)** | platform.openai.com | $0.04-0.12 | Prepago $5 |
+| **Google AI (Nano Banana)** | ai.google.dev | $0.02-0.12 | Tier gratis disponible |
+| **Leonardo AI** | leonardo.ai | ~$0.015 | Plan desde $9/mes |
+| **Replicate (FLUX)** | replicate.com | $0.03-0.055 | Pay-as-you-go, sin mínimo |
+
+#### Midjourney (via APIs de Terceros)
+
+Midjourney **NO tiene API oficial pública**. Hay servicios de terceros que lo ofrecen:
+
+| Servicio | Precio | Características | Riesgo |
+|----------|--------|-----------------|--------|
+| **[UseAPI](https://useapi.net)** | $10/mes flat | Simple REST API, incluye Pika | Bajo-Medio |
+| **[ImagineAPI](https://imagineapi.dev)** | $30/mes ilimitado | User-friendly, con CDN | Bajo |
+| **[APIFrame](https://apiframe.pro)** | $39/mes (900 imgs) | Fully managed, sin riesgo de ban | Bajo |
+| **[GoAPI/LegNext](https://legnext.ai)** | ~$0.01-0.02/img | BYOA o pay-per-use | Medio |
+
+**Advertencia sobre Midjourney**:
+- Estos servicios usan automatización de Discord (contra ToS de Midjourney)
+- Existe riesgo de ban de tu cuenta si usas BYOA (Bring Your Own Account)
+- Servicios "managed" (ImagineAPI, APIFrame) usan sus propias cuentas, menor riesgo para ti
+- Los precios pueden cambiar y el servicio puede interrumpirse
+
+**Recomendación para Midjourney**:
+1. Empezar con **ImagineAPI** ($30/mes ilimitado) - más estable
+2. O **UseAPI** ($10/mes) si quieres probar barato
+3. NO usar tu propia cuenta de Midjourney
+
+#### Resumen de Todos los Proveedores
+
+| Proveedor | Costo/Imagen | API Oficial | Calidad | Mejor Para |
+|-----------|--------------|-------------|---------|------------|
+| **OpenAI DALL-E 3** | $0.04-0.12 | ✅ Sí | Alta | General, marketing |
+| **Midjourney** | $0.01-0.03* | ❌ Terceros | Muy Alta | Arte, creatividad |
+| **Google Nano Banana** | $0.02-0.12 | ✅ Sí | Alta | Texto en imágenes |
+| **Leonardo AI** | ~$0.015 | ✅ Sí | Alta | Consistencia personajes |
+| **FLUX (Replicate)** | $0.03-0.055 | ✅ Sí | Muy Alta | Fotorrealismo |
+
+*Midjourney via terceros, precio varía según proveedor
+
+**Recomendación para empezar barato**:
+1. Google AI (Nano Banana) - tiene tier gratis
+2. Replicate (FLUX schnell) - $0.003/imagen, muy barato
+3. OpenAI DALL-E - $5 prepago te da ~100 imágenes
 
 ### 4. Stripe (para cuando quieras cobrar)
 - Cuenta gratis
@@ -300,6 +349,12 @@ OPENAI_API_KEY=sk-...
 GOOGLE_AI_API_KEY=AIza...
 LEONARDO_API_KEY=...
 REPLICATE_API_TOKEN=r8_...
+
+# Midjourney (via terceros - elige uno)
+MIDJOURNEY_PROVIDER=useapi  # 'useapi' | 'imagineapi' | 'apiframe'
+USEAPI_API_KEY=...          # Si usas useapi.net
+IMAGINEAPI_API_KEY=...      # Si usas imagineapi.dev
+APIFRAME_API_KEY=...        # Si usas apiframe.pro
 
 # Stripe (gratis, solo cobran por transacción)
 STRIPE_SECRET_KEY=sk_test_...
